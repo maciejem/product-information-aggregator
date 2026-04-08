@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -67,24 +66,24 @@ public class ProductAggregationService {
         Market market = Market.of(marketCode);
 
         // All four start simultaneously
-        CompletableFuture<ProductDetails>            catalogFuture      = CompletableFuture
+        CompletableFuture<ProductDetails> catalogFuture = CompletableFuture
                 .supplyAsync(() -> catalogClient.getProduct(productId, market), executor)
                 .orTimeout(config.timeouts().catalogMs(), TimeUnit.MILLISECONDS);
 
-        CompletableFuture<Optional<PriceInfo>>       priceFuture        = CompletableFuture
+        CompletableFuture<PriceInfo> priceFuture = CompletableFuture
                 .supplyAsync(() -> fetchPrice(productId, market, customerId), executor)
                 .orTimeout(config.timeouts().pricingMs(), TimeUnit.MILLISECONDS)
-                .exceptionally(t -> Optional.empty());
+                .exceptionally(t -> null);
 
-        CompletableFuture<Optional<StockInfo>>       availabilityFuture = CompletableFuture
+        CompletableFuture<StockInfo> availabilityFuture = CompletableFuture
                 .supplyAsync(() -> fetchAvailability(productId, market), executor)
                 .orTimeout(config.timeouts().availabilityMs(), TimeUnit.MILLISECONDS)
-                .exceptionally(t -> Optional.empty());
+                .exceptionally(t -> null);
 
-        CompletableFuture<Optional<CustomerProfile>> customerFuture     = CompletableFuture
+        CompletableFuture<CustomerProfile> customerFuture = CompletableFuture
                 .supplyAsync(() -> fetchCustomer(customerId), executor)
                 .orTimeout(config.timeouts().customerMs(), TimeUnit.MILLISECONDS)
-                .exceptionally(t -> Optional.empty());
+                .exceptionally(t -> null);
 
         // Fail fast — if catalog failed there is no point collecting optional results
         ProductDetails product = getCatalog(catalogFuture, productId);
@@ -108,33 +107,33 @@ public class ProductAggregationService {
         }
     }
 
-    // ── Optional — failure returns empty, response degrades gracefully ─────────
+    // ── Optional — failure returns null, response degrades gracefully ──────────
 
-    private Optional<PriceInfo> fetchPrice(String productId, Market market, String customerId) {
+    private PriceInfo fetchPrice(String productId, Market market, String customerId) {
         try {
-            return pricingClient.getPrice(productId, market, customerId);
+            return pricingClient.getPrice(productId, market, customerId).orElse(null);
         } catch (Exception e) {
             log.warn("[PricingService] Unavailable: {}", e.getMessage());
-            return Optional.empty();
+            return null;
         }
     }
 
-    private Optional<StockInfo> fetchAvailability(String productId, Market market) {
+    private StockInfo fetchAvailability(String productId, Market market) {
         try {
-            return availabilityClient.getAvailability(productId, market);
+            return availabilityClient.getAvailability(productId, market).orElse(null);
         } catch (Exception e) {
             log.warn("[AvailabilityService] Unavailable: {}", e.getMessage());
-            return Optional.empty();
+            return null;
         }
     }
 
-    private Optional<CustomerProfile> fetchCustomer(String customerId) {
-        if (customerId == null) return Optional.empty();
+    private CustomerProfile fetchCustomer(String customerId) {
+        if (customerId == null) return null;
         try {
-            return customerClient.getCustomer(customerId);
+            return customerClient.getCustomer(customerId).orElse(null);
         } catch (Exception e) {
             log.warn("[CustomerService] Unavailable: {}", e.getMessage());
-            return Optional.empty();
+            return null;
         }
     }
 }

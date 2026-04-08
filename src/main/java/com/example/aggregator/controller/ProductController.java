@@ -1,7 +1,6 @@
 package com.example.aggregator.controller;
 
 import com.example.aggregator.model.AggregatedProductData;
-import com.example.aggregator.model.ProductResponse;
 import com.example.aggregator.service.ProductAggregationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,13 +56,17 @@ public class ProductController {
                 data.product().imageUrls(),
                 data.product().specs(),
                 data.marketCode(),
-                data.price().orElse(null),
-                data.stock().orElse(null),
-                data.customer().map(c -> new ProductResponse.CustomerContext(c.segment(), true)).orElse(null),
+                data.price() != null ? new ProductResponse.PriceResponse(
+                        data.price().basePrice(), data.price().discountRate(),
+                        data.price().finalPrice(), data.price().currency()) : null,
+                data.stock() != null ? new ProductResponse.StockResponse(
+                        data.stock().inStock(), data.stock().quantity(),
+                        data.stock().warehouseId(), data.stock().estimatedDelivery()) : null,
+                data.customer() != null ? new ProductResponse.CustomerContext(data.customer().segment(), true) : null,
                 new ProductResponse.DataAvailability(
-                        data.price().isPresent(),
-                        data.stock().isPresent(),
-                        data.customer().isPresent()
+                        data.price() != null,
+                        data.stock() != null,
+                        data.customer() != null
                 )
         );
     }

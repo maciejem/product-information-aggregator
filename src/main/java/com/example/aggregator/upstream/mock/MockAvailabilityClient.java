@@ -15,7 +15,7 @@ import java.util.random.RandomGenerator;
  * Latency and reliability are configurable via application.yaml (aggregator.mocks.availability).
  */
 @Component
-public class MockAvailabilityClient implements AvailabilityClient {
+public class MockAvailabilityClient extends AbstractMockClient implements AvailabilityClient {
 
     private static final Map<String, String> REGIONAL_WAREHOUSES = Map.of(
             "NL", "WH-AMS-01", "DE", "WH-FRA-01", "BE", "WH-AMS-01",
@@ -29,10 +29,8 @@ public class MockAvailabilityClient implements AvailabilityClient {
             "WH-STO-01", "3-4 business days"
     );
 
-    private final AggregatorConfig.MockServiceConfig mockConfig;
-
     public MockAvailabilityClient(AggregatorConfig config) {
-        this.mockConfig = config.mocks().availability();
+        super(config.mocks().availability());
     }
 
     @Override
@@ -47,19 +45,4 @@ public class MockAvailabilityClient implements AvailabilityClient {
         return Optional.of(new StockInfo(quantity > 0, quantity, warehouseId, delivery));
     }
 
-    private void simulateLatency() {
-        double jitter = 0.8 + RandomGenerator.getDefault().nextDouble() * 0.4;
-        try {
-            Thread.sleep(Math.round(mockConfig.latencyMs() * jitter));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted during latency simulation", e);
-        }
-    }
-
-    private void simulateReliability(String serviceName) {
-        if (RandomGenerator.getDefault().nextDouble() >= mockConfig.reliability()) {
-            throw new RuntimeException(serviceName + ": simulated transient failure");
-        }
-    }
 }

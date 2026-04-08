@@ -10,14 +10,13 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.random.RandomGenerator;
 
 /**
  * Mock Catalog Service.
  * Latency and reliability are configurable via application.yaml (aggregator.mocks.catalog).
  */
 @Component
-public class MockCatalogClient implements CatalogClient {
+public class MockCatalogClient extends AbstractMockClient implements CatalogClient {
 
     private static final Set<String> KNOWN_PRODUCTS = Set.of(
             "BRAKE-PAD-001", "BRAKE-PAD-002",
@@ -25,10 +24,8 @@ public class MockCatalogClient implements CatalogClient {
             "BEARING-FRONT-100"
     );
 
-    private final AggregatorConfig.MockServiceConfig mockConfig;
-
     public MockCatalogClient(AggregatorConfig config) {
-        this.mockConfig = config.mocks().catalog();
+        super(config.mocks().catalog());
     }
 
     @Override
@@ -70,19 +67,4 @@ public class MockCatalogClient implements CatalogClient {
         };
     }
 
-    private void simulateLatency() {
-        double jitter = 0.8 + RandomGenerator.getDefault().nextDouble() * 0.4;
-        try {
-            Thread.sleep(Math.round(mockConfig.latencyMs() * jitter));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted during latency simulation", e);
-        }
-    }
-
-    private void simulateReliability(String serviceName) {
-        if (RandomGenerator.getDefault().nextDouble() >= mockConfig.reliability()) {
-            throw new RuntimeException(serviceName + ": simulated transient failure");
-        }
-    }
 }

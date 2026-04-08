@@ -63,8 +63,8 @@ Only Catalog is required. The three optional services degrade gracefully — any
 | Service      | Required | On failure              | Timeout |
 |--------------|----------|-------------------------|---------|
 | Catalog      | Yes      | 503 / 404               | 200ms   |
-| Pricing      | No       | Price unavailable        | 300ms   |
-| Availability | No       | Stock unknown            | 350ms   |
+| Pricing      | No       | Price unavailable        | 200ms   |
+| Availability | No       | Stock unknown            | 200ms   |
 | Customer     | No       | Non-personalised response| 200ms   |
 
 ### Upstream services are interfaces
@@ -100,6 +100,8 @@ Occasional failures and partial responses are expected and intentional — they 
 
 **Cache catalog responses.** Product content changes rarely. A short-lived cache (e.g. 5 minutes) would significantly reduce load on the catalog service for repeated product views.
 
+**Improve tests.** Improve tests for reliability and latency.
+
 ---
 
 ## Design question — Option A: Adding a Related Products service
@@ -115,10 +117,10 @@ Occasional failures and partial responses are expected and intentional — they 
 3. Add one `CompletableFuture` in `ProductAggregationService.aggregate()`:
 
 ```java
-CompletableFuture<Optional<List<String>>> relatedFuture = CompletableFuture
+CompletableFuture<List<String>> relatedFuture = CompletableFuture
         .supplyAsync(() -> fetchRelatedProducts(productId, market), executor)
         .orTimeout(300, TimeUnit.MILLISECONDS)
-        .exceptionally(t -> Optional.empty());
+        .exceptionally(t -> null);
 ```
 
 4. Add a `relatedProducts` field to `AggregatedProductData` and `ProductResponse`

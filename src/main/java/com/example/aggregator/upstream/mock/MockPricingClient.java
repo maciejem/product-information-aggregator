@@ -9,14 +9,13 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
-import java.util.random.RandomGenerator;
 
 /**
  * Mock Pricing Service.
  * Latency and reliability are configurable via application.yaml (aggregator.mocks.pricing).
  */
 @Component
-public class MockPricingClient implements PricingClient {
+public class MockPricingClient extends AbstractMockClient implements PricingClient {
 
     private static final Map<String, String> MARKET_CURRENCIES = Map.of(
             "NL", "EUR", "DE", "EUR", "BE", "EUR", "FR", "EUR",
@@ -35,10 +34,8 @@ public class MockPricingClient implements PricingClient {
             "C005", new BigDecimal("0.10")
     );
 
-    private final AggregatorConfig.MockServiceConfig mockConfig;
-
     public MockPricingClient(AggregatorConfig config) {
-        this.mockConfig = config.mocks().pricing();
+        super(config.mocks().pricing());
     }
 
     @Override
@@ -55,19 +52,4 @@ public class MockPricingClient implements PricingClient {
         return Optional.of(PriceInfo.of(basePrice, discount, currency));
     }
 
-    private void simulateLatency() {
-        double jitter = 0.8 + RandomGenerator.getDefault().nextDouble() * 0.4;
-        try {
-            Thread.sleep(Math.round(mockConfig.latencyMs() * jitter));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted during latency simulation", e);
-        }
-    }
-
-    private void simulateReliability(String serviceName) {
-        if (RandomGenerator.getDefault().nextDouble() >= mockConfig.reliability()) {
-            throw new RuntimeException(serviceName + ": simulated transient failure");
-        }
-    }
 }

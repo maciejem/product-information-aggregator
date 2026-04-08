@@ -1,11 +1,9 @@
 package com.example.aggregator.model;
 
-import java.util.Optional;
-
 public record AggregatedProductData(
         ProductDetails product,
         String marketCode,
-        Optional<PriceInfo> price,
-        Optional<StockInfo> stock,
-        Optional<CustomerProfile> customer
+        PriceInfo price,       // null when pricing service unavailable
+        StockInfo stock,       // null when availability service unavailable
+        CustomerProfile customer // null when no customerId or customer service unavailable
 ) {}

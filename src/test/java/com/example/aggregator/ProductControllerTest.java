@@ -15,7 +15,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -96,9 +95,9 @@ class ProductControllerTest {
                         Map.of("material", "semi-metallic", "thickness", "12mm")
                 ),
                 "nl-NL",
-                Optional.of(PriceInfo.of(new BigDecimal("49.95"), BigDecimal.ZERO, "EUR")),
-                Optional.of(new StockInfo(true, 12, "WH-AMS-01", "1-2 business days")),
-                Optional.empty()
+                PriceInfo.of(new BigDecimal("49.95"), BigDecimal.ZERO, "EUR"),
+                new StockInfo(true, 12, "WH-AMS-01", "1-2 business days"),
+                null
         );
     }
 }
